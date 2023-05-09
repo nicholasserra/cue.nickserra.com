@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>CUE Convert</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+        <script>
+          $(document).ready(function() {
+            $('#convert').click(function(){
+              var chapters = [];
+              var youtubeTimestamps = [];
+              var setlist = $("#setlist").val().trim();
+              var cue = $("#cue").val();
+
+              if(setlist === "" || cue === "") {
+                alert("Setlist and CUE information needs filled.")
+              }
+
+              var setlistTracks = setlist.split(/\r?\n/);
+              var indexes = [...cue.matchAll(/INDEX \d+ (\d+:\d+:\d+)/g)].map(i => i[1]);
+
+              if (setlistTracks.length !== indexes.length) {
+                alert("Setlist track count does not match cue sheet track count.")
+              }
+
+              for (var i = 0; i < indexes.length; i++) {
+                var longMinutes = indexes[i].split(":")[0];
+                var seconds = indexes[i].split(":")[1];
+
+                // seventy five frames to one second
+                var audioFrames = indexes[i].split(":")[2];
+
+                var hours = Math.trunc(longMinutes / 60);
+                var minutes = longMinutes % 60;
+
+                hours = hours.toString().padStart(2, 0);
+                minutes = minutes.toString().padStart(2, 0);
+
+                youtubeTimestamps.push(`${longMinutes}:${seconds} ${setlistTracks[i]}`)
+
+                var framesPercent = audioFrames / 75;
+                if (framesPercent === 0) {
+                  var nanoseconds = "000000000";
+                } else {
+                  var nanoseconds = Math.round(999999999 * framesPercent)
+                }
+
+                if (hours !== "00") {
+                  var chapter = `${hours}:${minutes}:${seconds}.${nanoseconds}`;
+                } else {
+                  var chapter = `${minutes}:${seconds}.${nanoseconds}`;
+                }
+
+                chapters.push(`
+    <ChapterAtom>
+      <ChapterTimeStart>${chapter}</ChapterTimeStart>
+        <ChapterDisplay>
+          <ChapterString>${setlistTracks[i]}</ChapterString>
+          <ChapterLanguage>eng</ChapterLanguage>
+        </ChapterDisplay>
+    </ChapterAtom>`);
+
+              }
+
+              chaptersTemplate = `<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE Chapters SYSTEM "matroskachapters.dtd">
+<Chapters>
+  <EditionEntry>${chapters.join("")}
+  </EditionEntry>
+</Chapters>`
+
+              $("#chapters").val(chaptersTemplate)
+              $("#youtube").val(youtubeTimestamps.join("\n"))
+            });
+          });
+        </script>
+    </head>
+    <body>
+        <h1>CUE Convert</h1>
+        <h2>Inputs</h2>
+        <label>Setlist (split songs on newline):</label><br>
+        <textarea rows="20" cols="50" name="setlist" id="setlist">
+Radio Friendly Unit Shifter
+Drain You
+Breed
+Serve The Servants
+About A Girl
+Heart-Shaped Box
+Sliver
+Dumb
+In Bloom
+Come As You Are
+        </textarea><br>
+        <label>CUE sheet:</label><br>
+        <textarea rows="20" cols="100" name="cue" id="cue">
+FILE "" WAVE
+  TRACK 01 AUDIO
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    INDEX 01 07:31:47
+  TRACK 03 AUDIO
+    INDEX 01 12:42:72
+  TRACK 04 AUDIO
+    INDEX 01 18:18:48
+  TRACK 05 AUDIO
+    INDEX 01 23:17:28
+  TRACK 06 AUDIO
+    INDEX 01 28:12:04
+  TRACK 07 AUDIO
+    INDEX 01 38:54:21
+  TRACK 08 AUDIO
+    INDEX 01 45:57:66
+  TRACK 09 AUDIO
+    INDEX 01 65:32:70
+  TRACK 10 AUDIO
+    INDEX 01 85:01:60
+        </textarea><br>
+        <button id="convert">Convert</button><br>
+        <h2>Output</h2>
+        <label>Chapters XML:</label><br>
+        <textarea rows="20" cols="100" name="chapters" id="chapters" disabled></textarea><br>
+        <label>Youtube:</label><br>
+        <textarea rows="20" cols="100" name="youtube" id="youtube" disabled></textarea><br>
+    </body>
+</html>
