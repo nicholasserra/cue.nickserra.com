@@ -36,7 +36,11 @@
                 hours = hours.toString().padStart(2, 0);
                 minutes = minutes.toString().padStart(2, 0);
 
-                youtubeTimestamps.push(`${longMinutes}:${seconds} ${setlistTracks[i]}`)
+                if (hours !== "00") {
+                  youtubeTimestamps.push(`${hours}:${minutes}:${seconds} ${setlistTracks[i]}`)
+                } else {
+                  youtubeTimestamps.push(`${minutes}:${seconds} ${setlistTracks[i]}`)
+                }
 
                 var framesPercent = audioFrames / 75;
                 if (framesPercent === 0) {
